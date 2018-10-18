@@ -10,15 +10,13 @@ function analysis(object_name) {
         }
     })
 };
-
-module.exports = {
-    parser: function (dir_path){
+function parser(dir_path){
         fs.readdir(dir_path, function (err, files) {
             for (let i = 0; i < files.length; i++) {
                 analysis(dir_path + '\\' + files[i]);
             }
-            return files;
-        })
-    }
 
+        });
 };
+module.exports = files;
+module.exports.parser_file = parser;

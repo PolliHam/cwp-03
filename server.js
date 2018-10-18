@@ -32,11 +32,13 @@ const server = net.createServer((client) => {
             client.write('ACK');
         }
         else if(client.FILES){
+            print(client,'Client: '+ data+'\n');
             let parts = data.split('|CONTENT_FILE|');
             let file = fs.createWriteStream(client.dir+parts[0]);
             file.write(parts[1]);
             file.close();
             client.write('NEXT');
+            print(client, 'Server: NEXT \n');
         }
         else if(client.ACK){
             print(client,'Client: '+ data+'\n');
