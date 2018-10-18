@@ -1,59 +1,45 @@
 const net = require('net');
 const fs = require('fs');
-
+const files = require('./summary.js');
 const port = 8124;
-let arr;
+let arr =[];
+
+process.argv.slice(2).forEach((dir)=>{
+    arr = arr.concat( files.parser(dir));
+});
+
 const client = new net.Socket();
 
 client.setEncoding('utf8');
 
 client.connect(port, function() {
-    fs.readFile('qa.json', 'utf8', (err, data)=> {
-        if(err){
-            console.log(err);
-        }else{
-            arr = shuffle(JSON.parse(data));
-            console.log('Connected');
-            client.write('FILES');
-        }
-    });
-
+    client.write('FILES');
 });
 
-let count=0;
+
 client.on('data', function(data) {
-    if(data === 'ACK'){
-        console.log('Вопрос:'+arr[count].q);
-        client.write(arr[count].q);
-        count++;
+    if(data === 'ACK' || data === 'NEXT'){
+        if (!arr.length<1){
+            let file_name = arr.pop();
+            fs.readFile(file_name, (err, data) => {
+                if (err) {
+                    console.log(err);
+                } else {
+                    client.write(file_name + '|CONTENT_FILE|' +data );
+                }
+            });
+        }else{
+            client.destroy();
+        }
+
     }
     else if (data === 'DEC'){
         client.destroy();
     }
-    else{
-        if(count < arr.length){
-            console.log('Отвер сервера:'+arr[parseInt(data.toString())].a);
-            console.log('Правильный ответ:' +arr[count-1].a );
-            console.log('Вопрос: '+ arr[count].q);
-            client.write(arr[count].q);
-            count++;
-        }
-        else{
-            console.log('Отвер сервера:'+arr[parseInt(data.toString())].a);
-            console.log('Правильный ответ:' +arr[count-1].a );
-            client.destroy();
-        }
-    }
+
 });
 
 client.on('close', function() {
     console.log('Connection closed');
 });
 
-function shuffle(a) {
-    for (let i = a.length - 1; i > 0; i--) {
-        let j = Math.ceil(Math.random() * (i+1));
-        [a[i], a[j]] = [a[j], a[i]];
-    }
-    return a;
-}
